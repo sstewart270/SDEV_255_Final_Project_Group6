@@ -1,17 +1,17 @@
 // server/server.js
 const express = require('express');
 const cors = require('cors');
-const { loadCourses, saveCourses } = require('./store');
+const { readCourses, writeCourses } = require('./store'); // <-- fixed names
 
 const app = express();
-// IMPORTANT: default to 5001 to match the client proxy
+// IMPORTANT: default to 5001 to match the client proxy in dev
 const PORT = process.env.PORT || 5001;
 
 app.use(cors());
 app.use(express.json());
 
 // Load from disk at startup
-let courses = loadCourses();
+let courses = readCourses(); // <-- fixed
 
 // Health check
 app.get('/', (_req, res) => {
@@ -70,7 +70,7 @@ app.post('/courses', (req, res) => {
   };
 
   courses.push(course);
-  saveCourses(courses); // persist
+  writeCourses(courses); // <-- fixed
   res.status(201).json(course);
 });
 
@@ -84,7 +84,7 @@ app.put('/courses/:id', (req, res) => {
   if (updates.credits != null) updates.credits = Number(updates.credits);
 
   courses[idx] = { ...courses[idx], ...updates, id };
-  saveCourses(courses); // persist
+  writeCourses(courses); // <-- fixed
   res.json(courses[idx]);
 });
 
@@ -96,12 +96,11 @@ app.delete('/courses/:id', (req, res) => {
   if (courses.length === before)
     return res.status(404).json({ error: 'not found' });
 
-  saveCourses(courses); // persist
+  writeCourses(courses); // <-- fixed
   res.status(204).end();
 });
 
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
-
 

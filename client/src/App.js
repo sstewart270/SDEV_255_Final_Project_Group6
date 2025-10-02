@@ -1,9 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+// client/src/App.js
+import React from "react";
+import './App.css';
+import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
+import Courses from "./pages/Courses";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import Courses from "./pages/Courses";
-import "./App.css";
 
 export default function App() {
   return (
@@ -29,5 +31,7 @@ export default function App() {
     </Router>
   );
 }
+
+
 
 
