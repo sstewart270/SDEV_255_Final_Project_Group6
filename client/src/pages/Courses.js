@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from "react";
 
 const API_BASE = window.location.hostname.endsWith(".github.io")
-  // ⬇️ Replace with your exact Render URL (no trailing slash)
-  ? "https://sdev-255-final-project-group6-2.onrender.com/"
-  : ""; // In dev, the CRA proxy forwards /courses to localhost:5001
+  ? "https://sdev-255-final-project-group6.onrender.com"
+  : "";
+
 
 export default function Courses() {
   const [courses, setCourses] = useState([]);
