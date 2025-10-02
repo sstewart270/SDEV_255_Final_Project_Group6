@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "name": "Intro to Web Development",
+    "description": "HTML, CSS, and basic JavaScript fundamentals.",
+    "subject": "CS",
+    "credits": 3
+  },
+  {
+    "id": 2,
+    "name": "Data Structures",
+    "description": "Arrays, lists, stacks, queues, and trees.",
+    "subject": "CS",
+    "credits": 4
+  }
+]
