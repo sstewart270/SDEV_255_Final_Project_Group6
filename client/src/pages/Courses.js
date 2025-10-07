@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 
 const API_BASE = window.location.hostname.endsWith(".github.io")
-  ? "https://sdev-255-final-project-group6.onrender.com"
+  ? "http://https://sdev-255-final-project-group6.onrender.com/"
   : "";
 
 

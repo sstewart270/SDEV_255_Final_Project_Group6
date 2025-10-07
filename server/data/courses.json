@@ -12,5 +12,33 @@
     "description": "Arrays, lists, stacks, queues, and trees.",
     "subject": "CS",
     "credits": 4
+  },
+  {
+    "id": 3,
+    "name": "SDEV255",
+    "description": "Web Application Development",
+    "subject": "CS",
+    "credits": 3
+  },
+  {
+    "id": 4,
+    "name": "SDEV265",
+    "description": "System Software Analysis",
+    "subject": "CS",
+    "credits": 3
+  },
+  {
+    "id": 5,
+    "name": "SDEV148",
+    "description": "Intro to Game Development",
+    "subject": "CS",
+    "credits": 3
+  },
+  {
+    "id": 6,
+    "name": "SDEV245",
+    "description": "Security and Secure Coding",
+    "subject": "CS",
+    "credits": 3
   }
 ]
