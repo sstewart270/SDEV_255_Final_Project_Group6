@@ -1,12 +1,12 @@
 // ✅ All imports must go first
 import React, { useEffect, useState } from "react";
 
-// Define the API base URL dynamically for local and GitHub Pages
+// Define the API base URL dynamically for local and hithub pages
 const API_BASE =
   process.env.REACT_APP_API_URL ||
   (window.location.hostname === "localhost"
     ? "http://localhost:5001"
-    : "https://sdev-255-final-project-group6-2.onrender.com"); // <-- your Render backend URL
+    : "https://sdev-255-final-project-group6.onrender.com"); 
 
 export default function Courses() {
   const [courses, setCourses] = useState([]);
