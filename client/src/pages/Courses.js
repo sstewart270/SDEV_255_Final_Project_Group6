@@ -1,14 +1,21 @@
-// client/src/pages/Courses.js
+// ✅ All imports must go first
 import React, { useEffect, useState } from "react";
 
-const API_BASE = window.location.hostname.endsWith(".github.io")
-  ? "http://https://sdev-255-final-project-group6.onrender.com/"
-  : "";
-
+// Define the API base URL dynamically for local and GitHub Pages
+const API_BASE =
+  process.env.REACT_APP_API_URL ||
+  (window.location.hostname === "localhost"
+    ? "http://localhost:5001"
+    : "https://sdev-255-final-project-group6-2.onrender.com"); // <-- your Render backend URL
 
 export default function Courses() {
   const [courses, setCourses] = useState([]);
-  const [form, setForm] = useState({ name: "", description: "", subject: "", credits: "" });
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    subject: "",
+    credits: "",
+  });
   const [editingId, setEditingId] = useState(null);
   const [query, setQuery] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
@@ -18,9 +25,16 @@ export default function Courses() {
     if (query) params.set("q", query);
     if (subjectFilter) params.set("subject", subjectFilter);
 
-    const res = await fetch(`${API_BASE}/courses${params.toString() ? `?${params}` : ""}`);
-    const data = await res.json();
-    setCourses(data);
+    try {
+      const res = await fetch(
+        `${API_BASE}/courses${params.toString() ? `?${params}` : ""}`
+      );
+      if (!res.ok) throw new Error("Failed to fetch courses");
+      const data = await res.json();
+      setCourses(data);
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+    }
   };
 
   useEffect(() => {
@@ -47,29 +61,39 @@ export default function Courses() {
       credits: Number(form.credits),
     };
 
-    if (!payload.name || !payload.description || !payload.subject || isNaN(payload.credits)) {
+    if (
+      !payload.name ||
+      !payload.description ||
+      !payload.subject ||
+      isNaN(payload.credits)
+    ) {
       alert("Please fill in all fields correctly.");
       return;
     }
 
-    if (editingId) {
-      const res = await fetch(`${API_BASE}/courses/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) { alert("Update failed"); return; }
-    } else {
-      const res = await fetch(`${API_BASE}/courses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) { alert("Create failed"); return; }
-    }
+    try {
+      if (editingId) {
+        const res = await fetch(`${API_BASE}/courses/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Update failed");
+      } else {
+        const res = await fetch(`${API_BASE}/courses`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error("Create failed");
+      }
 
-    resetForm();
-    fetchCourses();
+      resetForm();
+      fetchCourses();
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong. Please try again.");
+    }
   };
 
   const startEdit = (course) => {
@@ -85,9 +109,14 @@ export default function Courses() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this course?")) return;
-    const res = await fetch(`${API_BASE}/courses/${id}`, { method: "DELETE" });
-    if (!res.ok) { alert("Delete failed"); return; }
-    fetchCourses();
+    try {
+      const res = await fetch(`${API_BASE}/courses/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Delete failed");
+      fetchCourses();
+    } catch (err) {
+      console.error(err);
+      alert("Delete failed");
+    }
   };
 
   const handleFilter = (e) => {
@@ -113,7 +142,15 @@ export default function Courses() {
           style={{ marginRight: 8 }}
         />
         <button type="submit">Apply</button>
-        <button type="button" onClick={() => { setQuery(""); setSubjectFilter(""); fetchCourses(); }} style={{ marginLeft: 8 }}>
+        <button
+          type="button"
+          onClick={() => {
+            setQuery("");
+            setSubjectFilter("");
+            fetchCourses();
+          }}
+          style={{ marginLeft: 8 }}
+        >
           Clear
         </button>
       </form>
@@ -121,15 +158,42 @@ export default function Courses() {
       <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
         <h2>{editingId ? "Edit Course" : "Add Course"}</h2>
         <div style={{ display: "grid", gap: 8, maxWidth: 500 }}>
-          <input name="name" value={form.name} onChange={handleChange} placeholder="Name" />
-          <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description" rows={3} />
-          <input name="subject" value={form.subject} onChange={handleChange} placeholder="Subject (e.g., CS)" />
-          <input name="credits" value={form.credits} onChange={handleChange} placeholder="Credits (number)" />
+          <input
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            placeholder="Name"
+          />
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="Description"
+            rows={3}
+          />
+          <input
+            name="subject"
+            value={form.subject}
+            onChange={handleChange}
+            placeholder="Subject (e.g., CS)"
+          />
+          <input
+            name="credits"
+            value={form.credits}
+            onChange={handleChange}
+            placeholder="Credits (number)"
+          />
         </div>
         <div style={{ marginTop: 8 }}>
-          <button type="submit">{editingId ? "Save Changes" : "Add Course"}</button>
+          <button type="submit">
+            {editingId ? "Save Changes" : "Add Course"}
+          </button>
           {editingId && (
-            <button type="button" onClick={resetForm} style={{ marginLeft: 8 }}>
+            <button
+              type="button"
+              onClick={resetForm}
+              style={{ marginLeft: 8 }}
+            >
               Cancel
             </button>
           )}
@@ -141,16 +205,36 @@ export default function Courses() {
       ) : (
         <ul style={{ listStyle: "none", padding: 0 }}>
           {courses.map((c) => (
-            <li key={c.id} style={{ border: "1px solid #ddd", borderRadius: 8, padding: 12, marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <li
+              key={c.id}
+              style={{
+                border: "1px solid #ddd",
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
                 <strong>{c.name}</strong>
                 <div>
-                  <button onClick={() => startEdit(c)} style={{ marginRight: 8 }}>Edit</button>
+                  <button
+                    onClick={() => startEdit(c)}
+                    style={{ marginRight: 8 }}
+                  >
+                    Edit
+                  </button>
                   <button onClick={() => handleDelete(c.id)}>Delete</button>
                 </div>
               </div>
               <div style={{ marginTop: 6 }}>
-                <em>Subject:</em> {c.subject} &nbsp; | &nbsp; <em>Credits:</em> {c.credits}
+                <em>Subject:</em> {c.subject} &nbsp; | &nbsp;{" "}
+                <em>Credits:</em> {c.credits}
               </div>
               <p style={{ marginTop: 6 }}>{c.description}</p>
             </li>

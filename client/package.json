@@ -39,5 +39,8 @@
     ]
   },
   "homepage": "https://sstewart270.github.io/SDEV_255_Final_Project_Group6",
-  "proxy": "http://localhost:5001"
+  "proxy": "http://localhost:5001",
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  }
 }
