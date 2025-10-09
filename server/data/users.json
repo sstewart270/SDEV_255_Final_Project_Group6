@@ -1,0 +1,14 @@
+[
+  {
+    "id": "u1",
+    "username": "teacher1",
+    "role": "teacher",
+    "passwordHash": "$2b$10$QnMV7lQ7uAAXRpdRr5JgvOCmrTUXmTQ7TRQhZYPsnKhBnzF/.jNZW"
+  },
+  {
+    "id": "u2",
+    "username": "student1",
+    "role": "student",
+    "passwordHash": "$2b$10$QnMV7lQ7uAAXRpdRr5JgvOCmrTUXmTQ7TRQhZYPsnKhBnzF/.jNZW"
+  }
+]

@@ -1,24 +1,30 @@
 // server/store.js
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 
-const dataPath = path.join(__dirname, 'data', 'courses.json');
+function resolve(relPath) {
+  return path.join(__dirname, relPath);
+}
 
-function readCourses() {
+async function readJSON(relPath) {
+  const full = resolve(relPath);
   try {
-    const txt = fs.readFileSync(dataPath, 'utf-8');
-    return txt.trim() ? JSON.parse(txt) : [];
+    const text = await fs.readFile(full, 'utf-8');
+    return text.trim() ? JSON.parse(text) : [];
   } catch (err) {
     if (err.code === 'ENOENT') {
-      fs.writeFileSync(dataPath, '[]', 'utf-8');
+      await fs.mkdir(path.dirname(full), { recursive: true });
+      await fs.writeFile(full, '[]', 'utf-8');
       return [];
     }
     throw err;
   }
 }
 
-function writeCourses(courses) {
-  fs.writeFileSync(dataPath, JSON.stringify(courses, null, 2), 'utf-8');
+async function writeJSON(relPath, data) {
+  const full = resolve(relPath);
+  await fs.mkdir(path.dirname(full), { recursive: true });
+  await fs.writeFile(full, JSON.stringify(data, null, 2), 'utf-8');
 }
 
-module.exports = { readCourses, writeCourses, dataPath };
+module.exports = { readJSON, writeJSON };
