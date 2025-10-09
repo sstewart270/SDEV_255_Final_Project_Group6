@@ -1,7 +1,7 @@
 // ✅ All imports must go first
 import React, { useEffect, useState } from "react";
 
-// Define the API base URL dynamically for local and hithub pages
+// Define the API base URL dynamically for local and github pages
 const API_BASE =
   process.env.REACT_APP_API_URL ||
   (window.location.hostname === "localhost"

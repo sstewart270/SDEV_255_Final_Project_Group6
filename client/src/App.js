@@ -9,11 +9,16 @@ import Courses from "./pages/Courses";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 
+/** API base for dev vs GitHub Pages (prod) */
+const API_BASE =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5001"
+    : "https://sdev-255-final-project-group6.onrender.com";
+
 /* ---------------------------
    Auth Context (very simple)
 ---------------------------- */
 const AuthContext = createContext(null);
-
 export function useAuth() {
   return useContext(AuthContext);
 }
@@ -31,7 +36,7 @@ function AuthProvider({ children }) {
       try {
         setUser(JSON.parse(savedUser));
         setToken(savedToken);
-      } catch (_) {
+      } catch {
         localStorage.removeItem("user");
         localStorage.removeItem("token");
       }
@@ -40,9 +45,7 @@ function AuthProvider({ children }) {
   }, []);
 
   const login = async (username, password) => {
-    // Talk to your backend (Render or local). Client code uses relative path
-    // and your proxy or prod base URL will handle it.
-    const res = await fetch("/auth/login", {
+    const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
@@ -90,7 +93,7 @@ function LoginPage() {
     setError("");
     try {
       await auth.login(form.username.trim(), form.password);
-      nav("/"); // go home (or /courses) after login
+      nav("/"); // or nav("/courses")
     } catch (err) {
       setError(err.message || "Login failed");
     }
@@ -126,9 +129,6 @@ function LoginPage() {
         </label>
         <button className="btn" type="submit">Login</button>
       </form>
-      <p className="mt-3 text-sm opacity-80">
-        Tip: for your seeded users, the password is usually <code>password</code>.
-      </p>
     </div>
   );
 }
