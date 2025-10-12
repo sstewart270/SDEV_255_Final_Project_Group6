@@ -1,12 +1,12 @@
-// ✅ All imports must go first
-import React, { useEffect, useState } from "react";
+// client/src/pages/Courses.js
+import React, { useEffect, useState, useMemo } from "react";
 
-// Define the API base URL dynamically for local and github pages
+// Define the API base URL dynamically for local and GitHub Pages
 const API_BASE =
   process.env.REACT_APP_API_URL ||
   (window.location.hostname === "localhost"
     ? "http://localhost:5001"
-    : "https://sdev-255-final-project-group6.onrender.com"); 
+    : "https://sdev-255-final-project-group6.onrender.com");
 
 export default function Courses() {
   const [courses, setCourses] = useState([]);
@@ -20,6 +20,19 @@ export default function Courses() {
   const [query, setQuery] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("");
 
+  // --- Determine user role from localStorage ---
+  const user = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const token = useMemo(() => localStorage.getItem("token") || "", []);
+
+  // --- Fetch courses from backend ---
   const fetchCourses = async () => {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
@@ -42,6 +55,7 @@ export default function Courses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // --- Form & CRUD handlers (teacher-only) ---
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -54,6 +68,8 @@ export default function Courses() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (user?.role !== "teacher") return alert("Only teachers can add courses.");
+
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
@@ -72,21 +88,21 @@ export default function Courses() {
     }
 
     try {
-      if (editingId) {
-        const res = await fetch(`${API_BASE}/courses/${editingId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      };
+
+      const res = await fetch(
+        `${API_BASE}/courses${editingId ? `/${editingId}` : ""}`,
+        {
+          method: editingId ? "PUT" : "POST",
+          headers,
           body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error("Update failed");
-      } else {
-        const res = await fetch(`${API_BASE}/courses`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error("Create failed");
-      }
+        }
+      );
+
+      if (!res.ok) throw new Error("Save failed");
 
       resetForm();
       fetchCourses();
@@ -97,6 +113,7 @@ export default function Courses() {
   };
 
   const startEdit = (course) => {
+    if (user?.role !== "teacher") return;
     setEditingId(course.id);
     setForm({
       name: course.name,
@@ -108,9 +125,19 @@ export default function Courses() {
   };
 
   const handleDelete = async (id) => {
+    if (user?.role !== "teacher") return;
     if (!window.confirm("Delete this course?")) return;
+
     try {
-      const res = await fetch(`${API_BASE}/courses/${id}`, { method: "DELETE" });
+      const headers = {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      };
+
+      const res = await fetch(`${API_BASE}/courses/${id}`, {
+        method: "DELETE",
+        headers,
+      });
+
       if (!res.ok) throw new Error("Delete failed");
       fetchCourses();
     } catch (err) {
@@ -119,11 +146,13 @@ export default function Courses() {
     }
   };
 
+  // --- Filtering ---
   const handleFilter = (e) => {
     e.preventDefault();
     fetchCourses();
   };
 
+  // --- UI ---
   return (
     <div className="container">
       <h1>Courses</h1>
@@ -155,50 +184,61 @@ export default function Courses() {
         </button>
       </form>
 
-      <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-        <h2>{editingId ? "Edit Course" : "Add Course"}</h2>
-        <div style={{ display: "grid", gap: 8, maxWidth: 500 }}>
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="Name"
-          />
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Description"
-            rows={3}
-          />
-          <input
-            name="subject"
-            value={form.subject}
-            onChange={handleChange}
-            placeholder="Subject (e.g., CS)"
-          />
-          <input
-            name="credits"
-            value={form.credits}
-            onChange={handleChange}
-            placeholder="Credits (number)"
-          />
-        </div>
-        <div style={{ marginTop: 8 }}>
-          <button type="submit">
-            {editingId ? "Save Changes" : "Add Course"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              onClick={resetForm}
-              style={{ marginLeft: 8 }}
-            >
-              Cancel
+      {/* Student message */}
+      {user?.role === "student" && (
+        <p style={{ fontStyle: "italic", color: "#999", marginBottom: 16 }}>
+          Students can view available courses but cannot add, edit, or delete
+          them.
+        </p>
+      )}
+
+      {/* Teacher-only Add/Edit form */}
+      {user?.role === "teacher" && (
+        <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
+          <h2>{editingId ? "Edit Course" : "Add Course"}</h2>
+          <div style={{ display: "grid", gap: 8, maxWidth: 500 }}>
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Name"
+            />
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Description"
+              rows={3}
+            />
+            <input
+              name="subject"
+              value={form.subject}
+              onChange={handleChange}
+              placeholder="Subject (e.g., CS)"
+            />
+            <input
+              name="credits"
+              value={form.credits}
+              onChange={handleChange}
+              placeholder="Credits (number)"
+            />
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button type="submit">
+              {editingId ? "Save Changes" : "Add Course"}
             </button>
-          )}
-        </div>
-      </form>
+            {editingId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                style={{ marginLeft: 8 }}
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      )}
 
       {courses.length === 0 ? (
         <p>No courses found.</p>
@@ -222,18 +262,21 @@ export default function Courses() {
                 }}
               >
                 <strong>{c.name}</strong>
-                <div>
-                  <button
-                    onClick={() => startEdit(c)}
-                    style={{ marginRight: 8 }}
-                  >
-                    Edit
-                  </button>
-                  <button onClick={() => handleDelete(c.id)}>Delete</button>
-                </div>
+                {/* Teacher-only Edit/Delete buttons */}
+                {user?.role === "teacher" && (
+                  <div>
+                    <button
+                      onClick={() => startEdit(c)}
+                      style={{ marginRight: 8 }}
+                    >
+                      Edit
+                    </button>
+                    <button onClick={() => handleDelete(c.id)}>Delete</button>
+                  </div>
+                )}
               </div>
               <div style={{ marginTop: 6 }}>
-                <em>Subject:</em> {c.subject} &nbsp; | &nbsp;{" "}
+                <em>Subject:</em> {c.subject} &nbsp; | &nbsp;
                 <em>Credits:</em> {c.credits}
               </div>
               <p style={{ marginTop: 6 }}>{c.description}</p>
