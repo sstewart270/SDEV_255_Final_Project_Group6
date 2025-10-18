@@ -2,93 +2,62 @@ import React, { useEffect, useState } from "react";
 import { API_BASE } from "../App";
 
 export default function Schedule() {
-  const [items, setItems] = useState([]);
+  const [rows, setRows] = useState([]);
   const token = localStorage.getItem("token") || "";
 
   const load = async () => {
-    if (!token) return setItems([]);
-    try {
-      const res = await fetch(`${API_BASE}/schedule`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Failed to load schedule");
-      const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
-      setItems([]);
-    }
+    if (!token) return setRows([]);
+    const res = await fetch(`${API_BASE}/schedule`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json().catch(()=>[]);
+    setRows(Array.isArray(data) ? data : []);
   };
 
-  useEffect(() => {
+  const removeItem = async (courseId) => {
+    if (!token) return;
+    const res = await fetch(`${API_BASE}/schedule/remove/${courseId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return alert("Could not remove");
     load();
-    // eslint-disable-next-line
-  }, []);
-
-  const handleRemove = async (courseId) => {
-    if (!window.confirm("Remove this course from your schedule?")) return;
-    try {
-      const res = await fetch(`${API_BASE}/schedule/remove/${courseId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) throw new Error("Remove failed");
-      
-      
-      await load();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to remove course. Please try again.");
-    }
   };
+
+  useEffect(()=>{ load(); }, []); // eslint-disable-line
 
   if (!token) {
-    return <p style={{ marginTop: 24 }}>Please log in to view your schedule.</p>;
+    return (
+      <section className="section">
+        <div className="content-card">Please log in as a student to view your schedule.</div>
+      </section>
+    );
   }
 
   return (
-    <div>
-      <h1>My Schedule</h1>
-      {items.length === 0 ? (
-        <p>No courses in your schedule yet.</p>
-      ) : (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {items.map((c) => (
-            <li
-              key={c.id}
-              style={{
-                border: "1px solid #2d3748",
-                borderRadius: 12,
-                padding: 16,
-                marginBottom: 12,
-                background: "rgba(255,255,255,0.02)",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <strong style={{ fontSize: 18 }}>{c.name}</strong>
-                  <div style={{ marginTop: 6, opacity: 0.9 }}>
-                    <em>Subject:</em> {c.subject} &nbsp; | &nbsp;{" "}
-                    <em>Credits:</em> {c.credits}
+    <section className="section">
+      <div className="content-card">
+        <h2 style={{ color:"#fff", marginTop:0 }}>My Schedule</h2>
+        {rows.length === 0 ? (
+          <p className="card__meta">No courses in your schedule yet.</p>
+        ) : (
+          <ul style={{ listStyle:"none", padding:0, margin:0 }}>
+            {rows.map((c) => (
+              <li key={c.id} className="card" style={{ marginTop:12 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <div>
+                    <div className="card__title">{c.name}</div>
+                    <div className="card__meta" style={{ marginTop:4 }}>
+                      Subject: {c.subject} · Credits: {c.credits}
+                    </div>
                   </div>
+                  <button className="btn" onClick={()=>removeItem(c.id)}>Remove</button>
                 </div>
-                <button onClick={() => handleRemove(c.id)}>Remove</button>
-              </div>
-              <p style={{ marginTop: 8 }}>{c.description}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }

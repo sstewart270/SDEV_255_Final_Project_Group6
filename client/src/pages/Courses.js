@@ -1,4 +1,3 @@
-// client/src/pages/Courses.js
 import React, { useEffect, useMemo, useState } from "react";
 import { API_BASE } from "../App";
 
@@ -14,6 +13,8 @@ export default function Courses() {
   }, []);
   const token = localStorage.getItem("token") || "";
 
+  const teacher = user?.role === "teacher";
+
   const fetchCourses = async () => {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
@@ -22,16 +23,15 @@ export default function Courses() {
     const data = await res.json().catch(()=>[]);
     setCourses(Array.isArray(data) ? data : []);
   };
-  useEffect(() => { fetchCourses(); /* eslint-disable-next-line */ }, []);
+  useEffect(()=>{ fetchCourses(); }, []); // eslint-disable-line
 
-  /* -------- teacher CRUD -------- */
-  const teacher = user?.role === "teacher";
-  const handleChange = (e) => setForm((f)=>({ ...f, [e.target.name]: e.target.value }));
+  /* -------- CRUD (teacher) -------- */
+  const handleChange = (e) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   const resetForm = () => { setForm({ name:"", description:"", subject:"", credits:"" }); setEditingId(null); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!teacher) return alert("Only teachers can add courses.");
+    if (!teacher) return alert("Only teachers can add/edit courses.");
     const payload = {
       name: form.name.trim(),
       description: form.description.trim(),
@@ -57,7 +57,7 @@ export default function Courses() {
     if (!teacher) return;
     setEditingId(c.id);
     setForm({ name:c.name, description:c.description, subject:c.subject, credits:String(c.credits) });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior:"smooth" });
   };
 
   const handleDelete = async (id) => {
@@ -79,11 +79,7 @@ export default function Courses() {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ courseId }),
     });
-    if (!res.ok) {
-      const txt = await res.text().catch(()=> "");
-      console.error("Add schedule failed:", res.status, txt);
-      return alert("Could not add to schedule");
-    }
+    if (!res.ok) return alert("Could not add to schedule");
     alert("Added to your schedule!");
   };
 
@@ -91,65 +87,62 @@ export default function Courses() {
   const onClear = () => { setQuery(""); setSubjectFilter(""); fetchCourses(); };
 
   return (
-    <div className="container">
-      <h1>Courses</h1>
+    <section className="section">
+      <div className="stack">
+        {/* Search/Filter */}
+        <div className="content-card">
+          <form onSubmit={onFilter} style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+            <input className="input" value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search by name or description" />
+            <input className="input" value={subjectFilter} onChange={(e)=>setSubjectFilter(e.target.value)} placeholder="Filter by subject (e.g., CS)" />
+            <button className="btn" type="submit">Apply</button>
+            <button className="btn" type="button" onClick={onClear}>Clear</button>
+          </form>
+        </div>
 
-      <form onSubmit={onFilter} style={{ marginBottom: 16 }}>
-        <input value={query} onChange={(e)=>setQuery(e.target.value)} placeholder="Search by name or description" style={{ marginRight: 8 }}/>
-        <input value={subjectFilter} onChange={(e)=>setSubjectFilter(e.target.value)} placeholder="Filter by subject (e.g., CS)" style={{ marginRight: 8 }}/>
-        <button type="submit">Apply</button>
-        <button type="button" onClick={onClear} style={{ marginLeft: 8 }}>Clear</button>
-      </form>
-
-      {!teacher && (
-        <p style={{ fontStyle: "italic", color: "#999", marginBottom: 16 }}>
-          Click “Add to My Schedule” to build your schedule.
-        </p>
-      )}
-
-      {teacher && (
-        <form onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
-          <h2>{editingId ? "Edit Course" : "Add Course"}</h2>
-          <div style={{ display: "grid", gap: 8, maxWidth: 500 }}>
-            <input name="name" value={form.name} onChange={handleChange} placeholder="Name" />
-            <textarea name="description" value={form.description} onChange={handleChange} placeholder="Description" rows={3} />
-            <input name="subject" value={form.subject} onChange={handleChange} placeholder="Subject (e.g., CS)" />
-            <input name="credits" value={form.credits} onChange={handleChange} placeholder="Credits (number)" />
+        {/* Teacher form */}
+        {teacher && (
+          <div className="content-card">
+            <h2 style={{ color:"#fff", marginTop:0 }}>{editingId ? "Edit Course" : "Add Course"}</h2>
+            <form onSubmit={handleSubmit} className="stack">
+              <input className="input" name="name" value={form.name} onChange={handleChange} placeholder="Name" />
+              <textarea className="input" name="description" value={form.description} onChange={handleChange} placeholder="Description" rows={3} />
+              <input className="input" name="subject" value={form.subject} onChange={handleChange} placeholder="Subject (e.g., CS)" />
+              <input className="input" name="credits" value={form.credits} onChange={handleChange} placeholder="Credits (number)" />
+              <div style={{ display:"flex", gap:12 }}>
+                <button className="btn" type="submit">{editingId ? "Save Changes" : "Add Course"}</button>
+                {editingId && <button className="btn" type="button" onClick={resetForm}>Cancel</button>}
+              </div>
+            </form>
           </div>
-          <div style={{ marginTop: 8 }}>
-            <button type="submit">{editingId ? "Save Changes" : "Add Course"}</button>
-            {editingId && <button type="button" onClick={resetForm} style={{ marginLeft: 8 }}>Cancel</button>}
-          </div>
-        </form>
-      )}
+        )}
 
-      {courses.length === 0 ? (
-        <p>No courses found.</p>
-      ) : (
-        <ul style={{ listStyle:"none", padding:0 }}>
-          {courses.map((c) => (
-            <li key={c.id} style={{ border:"1px solid #ddd", borderRadius:8, padding:12, marginBottom:12 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                <strong>{c.name}</strong>
-                <div>
+        {/* List */}
+        <div className="stack">
+          {courses.length === 0 ? (
+            <div className="content-card">No courses found.</div>
+          ) : (
+            courses.map((c) => (
+              <div key={c.id} className="card">
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <h3 className="card__title">{c.name}</h3>
+                  <span className="card__badge">{c.subject} · {c.credits} cr</span>
+                </div>
+                <p className="card__meta" style={{ marginTop:6 }}>{c.description}</p>
+                <div style={{ display:"flex", gap:10, marginTop:12 }}>
                   {teacher ? (
                     <>
-                      <button onClick={()=>startEdit(c)} style={{ marginRight:8 }}>Edit</button>
-                      <button onClick={()=>handleDelete(c.id)}>Delete</button>
+                      <button className="btn" onClick={()=>startEdit(c)}>Edit</button>
+                      <button className="btn" onClick={()=>handleDelete(c.id)}>Delete</button>
                     </>
                   ) : (
-                    <button onClick={()=>addToSchedule(c.id)}>Add to My Schedule</button>
+                    <button className="btn" onClick={()=>addToSchedule(c.id)}>Add to My Schedule</button>
                   )}
                 </div>
               </div>
-              <div style={{ marginTop:6 }}>
-                <em>Subject:</em> {c.subject} &nbsp; | &nbsp; <em>Credits:</em> {c.credits}
-              </div>
-              <p style={{ marginTop:6 }}>{c.description}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+            ))
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
